@@ -2,6 +2,7 @@
 
 <div id='timeline'>
   <% @listed_tweets.each do |tweet| %>
-      <%= tweet.text %>
+      <%= tweet.user.username %> : <%= tweet.text %>
+      <br>
   <% end %>
 </div>
