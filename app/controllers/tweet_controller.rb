@@ -1,15 +1,15 @@
 class TweetController < ApplicationController
   def new
-    tmp = UserSession.find
+    tmp = session[:user]
     if tmp
-      @user = tmp.user
+      @user = tmp
     else
       redirect_to login_path
     end
   end
 
   def create
-    user = UserSession.find.user
+    user = session[:user]
     Tweet.new(user, params[:tweets][:text]).save
     redirect_to '/tweet/new'
   end

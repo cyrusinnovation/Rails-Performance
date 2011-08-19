@@ -1,14 +1,16 @@
 Twi1::Application.routes.draw do |map|
+  match 'user/edit' => 'users#edit', :as => :edit_current_user
+
+  match 'logout' => 'sessions#destroy', :as => :logout
+
+  match 'login' => 'sessions#new', :as => :login
+
+  resources :sessions
+
   post "tweet/create"
   get "tweet/new"
 
   match 'signup' => 'users#new', :as => :signup
-
-  match 'logout' => 'user_sessions#destroy', :as => :logout
-
-  match 'login' => 'user_sessions#new', :as => :login
-
-  resources :user_sessions
 
   resources :users
 

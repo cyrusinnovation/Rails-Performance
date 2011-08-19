@@ -1,6 +1,6 @@
 source 'http://rubygems.org'
 
-gem 'rails', '3.0.0.beta3'
+gem 'rails', '3.0.9'
 gem 'pg'
 
 # Bundle edge Rails instead:
@@ -26,6 +26,9 @@ gem 'sqlite3-ruby', :require => 'sqlite3'
 #   gem 'webrat'
 # end
 
-gem "authlogic", :git => "git://github.com/binarylogic/authlogic.git"
 gem "nifty-generators", :git => 'http://github.com/ryanb/nifty-generators.git'
 
+gem "mongoid", "~> 2.1"
+gem "bson_ext", "~> 1.3"
+gem "bcrypt-ruby", :require => "bcrypt"
+gem "mocha", :group => :test
