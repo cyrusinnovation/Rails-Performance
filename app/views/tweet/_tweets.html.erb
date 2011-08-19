@@ -1,0 +1,7 @@
+<h2>Public Timeline</h2>
+
+<div id='timeline'>
+  <% @listed_tweets.each do |tweet| %>
+      <%= tweet.text %>
+  <% end %>
+</div>

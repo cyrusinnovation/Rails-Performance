@@ -1,6 +1,7 @@
 class User
 
   include Mongoid::Document
+  has_many :tweets
 
   attr_accessor :password, :password_confirmation
 
@@ -15,7 +16,7 @@ class User
   validates_uniqueness_of :username, :email, :allow_blank => true
   validates_format_of :username, :with => /^[-\w\._@]+$/i, :allow_blank => true, :message => "should only contain letters, numbers, or .-_@"
   validates_format_of :email, :with => /^[-a-z0-9_+\.]+\@([-a-z0-9]+\.)+[a-z0-9]{2,4}$/i
-  validate :check_password
+  validate :check_password, :on =>:create
 
   def check_password
     if self.new_record?
@@ -59,13 +60,6 @@ class User
 
   def encrypt_password(pass)
     Digest::SHA1.hexdigest([pass, password_salt].join)
-  end
-
-  after_create do
-    File.open("#{RAILS_ROOT}/public/#{self.username}.js", 'w') {|io|
-      io.puts 'timeline(['
-      io.puts ']);'
-    }
   end
 
 end

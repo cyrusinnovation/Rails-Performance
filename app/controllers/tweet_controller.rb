@@ -1,16 +1,18 @@
 class TweetController < ApplicationController
   def new
-    tmp = session[:user]
-    if tmp
-      @user = tmp
+    if !session[:user_id].blank?
+      @user = User.find(session[:user_id])
+      @listed_tweets = @user.tweets
     else
       redirect_to login_path
     end
   end
 
   def create
-    user = session[:user]
-    Tweet.new(user, params[:tweets][:text]).save
+    user = User.find(session[:user_id])
+    @tweet = Tweet.new(params[:tweet])
+    @tweet.user = user
+    @tweet.save!
     redirect_to '/tweet/new'
   end
 end
