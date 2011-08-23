@@ -33,6 +33,11 @@ class User
     end
   end
 
+  def delete_tweets
+    @@user_db.zremrangebyrank "user:#{@id}:tweets", 0, -1
+    @tweets = []
+  end
+
   def username
     @username ||= @@user_db.get("user:#{@id}:username")
   end

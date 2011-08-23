@@ -14,6 +14,20 @@ class Tweet
     end
   end
 
+  def self.delete_all
+    (0..@@tweet_db.get("tweets:counter").to_i).map do |id|
+      @@tweet_db.del "tweet:#{id}:text"
+      @@tweet_db.del "tweet:#{id}:id"
+      @@tweet_db.del "tweet:#{id}:user_id"
+    end
+
+    User.all.each do |user|
+      user.delete_tweets
+    end
+    
+    @@tweet_db.set "tweets:counter", 0
+  end
+
   def initialize params={}
     params.each do |key, value|
       self.instance_variable_set ("@" + key.to_s).to_sym, value
