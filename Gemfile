@@ -28,7 +28,9 @@ gem 'sqlite3-ruby', :require => 'sqlite3'
 
 gem "nifty-generators", :git => 'http://github.com/ryanb/nifty-generators.git'
 
-gem "mongoid", "~> 2.1"
-gem "bson_ext", "~> 1.3"
+# gem "mongoid", "~> 2.1"
+# gem "bson_ext", "~> 1.3"
 gem "bcrypt-ruby", :require => "bcrypt"
 gem "mocha", :group => :test
+gem "hiredis"
+gem "redis", :require => ["redis/connection/hiredis", "redis"]

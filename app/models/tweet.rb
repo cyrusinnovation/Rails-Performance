@@ -1,38 +1,42 @@
+require 'redis/connection/hiredis'
+require 'redis'
+
 class Tweet
+  attr_writer :text, :user
+  attr_reader :index
 
-  include Mongoid::Document
+  @@tweet_db = Redis.new
 
-  field :text
-  belongs_to :user
+  def self.all
+    @@tweet_db.setnx "tweets:counter", 0
+    [0..@@tweet_db.get("tweets:counter")].map do |index|
+      Tweet.find index
+    end
+  end
 
-  #def initialize(owner, text)
-  #  @user = owner
-  #  @text = CGI.escapeHTML(text.to_s)
-  #end
+  def initialize params
+    params.each do |key, value|
+      self.instance_variable_set key, value
+    end
+  end
 
-  #
-  #def save
-  #  # FIXME: asynchronize each processes
-  #  ([@owner] + @owner.followers).each do |u|
-  #    add_a_tweet_on_timeline_to(u.username)
-  #  end
-  #  add_a_tweet_on_public_timeline()
-  #end
-  #
-  #def add_a_tweet_on_timeline_to(username)
-  #  add_a_tweet_on_the_file("#{RAILS_ROOT}/public/#{username}.js")
-  #end
-  #
-  #def add_a_tweet_on_public_timeline()
-  #  add_a_tweet_on_the_file("#{RAILS_ROOT}/public/_.js")
-  #end
-  #
-  #def add_a_tweet_on_the_file(file)
-  #  File.open(file, 'r+') {|io|
-  #    finale = "]);\n"
-  #    io.seek(-finale.size, IO::SEEK_END)
-  #    io.puts %|,{user: "#{@owner.username}", text: "#{@text}"}|
-  #    io.write finale
-  #  }
-  #end
+  def text
+    @text ||= @@tweet_db.get("tweet:#{@index}:text")
+  end
+
+  def user
+    @user ||= User.find(@@tweet_db.get "tweet:#{@index}:user_id")
+  end
+
+  def save!
+    @index ||= @@tweet_db.incr("tweets:counter")
+    @@tweet_db.set "tweet:#{index}:text", text
+    user.tweets << self
+    user.save
+  end
+
+  def self.find index
+    Tweet.new({index: index})
+  end
+
 end
