@@ -4,17 +4,13 @@ require 'redis'
 class User
 
   include ActiveModel::Validations
-  include ActiveModel::Callbacks
-#  include Mongoid::Document
-#  has_many :tweets
+  extend ActiveModel::Callbacks
+  extend ActiveModel::Naming
+  include ActiveModel::Conversion
 
-#  field :username,        :type => String
-#  field :email,           :type => String
-#  field :password_hash,   :type => String
-#  field :password_salt,   :type => String
-
-  attr_writer :username, :email, :password, :password_confirmation
-  attr_reader :index
+  attr_accessor :password, :password_confirmation
+  attr_writer :username, :email
+  attr_reader :id
 
   @@user_db = Redis.new
 
@@ -30,39 +26,54 @@ class User
   validates_format_of :email, :with => /^[-a-z0-9_+\.]+\@([-a-z0-9]+\.)+[a-z0-9]{2,4}$/i
   validate :check_password, :on =>:create
 
+  def self.all
+    @@user_db.setnx "users:counter", 0
+    (0..@@user_db.get("users:counter").to_i).map do |id|
+      User.find id
+    end
+  end
+
   def username
-    @username ||= @@user_db.get("user:#{@index}:username")
+    @username ||= @@user_db.get("user:#{@id}:username")
+  end
+
+  def to_s
+    @id
   end
 
   def email
-    @email ||= @@user_db.get("user:#{@index}:email")
+    @email ||= @@user_db.get("user:#{@id}:email")
   end
 
   def tweets
-    @tweets ||= @@user_db.smembers("user:#{@index}:tweets")
+    @tweets ||= @@user_db.zrange("user:#{@id}:tweets", 0, -1).map do |tweet_id|
+      Tweet.find tweet_id
+    end
   end
 
-  def initialize params
+  def initialize params={}
     params.each do |key, value|
-      self.instance_variable_set key, value
+      self.instance_variable_set ("@" + key.to_s).to_sym, value
     end
   end
 
-  def save
-    @index ||= @@user_db.incr("users:counter")
-    @@user_db.set "user:#{index}:username", username
-    @@user_db.set "username:#{username}", @index
-    @@user_db.set "user:#{index}:email", email
-    @@user_db.set "email:#{email}", @index
-    @@user_db.set "user:#{index}:password_hash", password_hash
-    @@user_db.set "user:#{index}:password_salt", password_salt
-    tweets.each do |tweet|
-      @@user_db.sadd "user:#{index}:tweets", tweet.index
+  def save!
+    _run_save_callbacks do
+      @id ||= @@user_db.incr("users:counter")
+      @@user_db.set "user:#{id}:username", username
+      @@user_db.set "username:#{username}", @id
+      @@user_db.set "user:#{id}:email", email
+      @@user_db.set "email:#{email}", @id
+      @@user_db.set "user:#{id}:password_hash", password_hash
+      @@user_db.set "user:#{id}:password_salt", password_salt
+      tweets.each do |tweet|
+        @@user_db.zadd "user:#{id}:tweets", tweet.id, tweet.id
+      end
     end
   end
 
-  def self.find index
-    User.new({index: index})
+  def self.find id
+    User.new({id: id})
   end
 
   def check_password
@@ -100,11 +111,11 @@ class User
   private
 
   def password_hash
-    @password_hash ||= @@user_db.get("user:#{@index}:password_hash")
+    @password_hash ||= @@user_db.get("user:#{@id}:password_hash")
   end
 
   def password_salt
-    @password_salt ||= @@user_db.get("user:#{@index}:password_salt")
+    @password_salt ||= @@user_db.get("user:#{@id}:password_salt")
   end
 
   def prepare_password
@@ -118,4 +129,7 @@ class User
     Digest::SHA1.hexdigest([pass, password_salt].join)
   end
 
+  def persisted?
+    true
+  end
 end

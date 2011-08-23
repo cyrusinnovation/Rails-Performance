@@ -1,6 +1,6 @@
 class TweetController < ApplicationController
   def new
-    if !session[:user_id].blank?
+    if !cookies[:user_id].blank?
       @user = User.find(cookies[:user_id])
       @listed_tweets = @user.tweets
     else
