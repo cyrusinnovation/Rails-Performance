@@ -30,12 +30,12 @@ gem "nifty-generators", :git => 'http://github.com/ryanb/nifty-generators.git'
 gem "bcrypt-ruby", :require => "bcrypt"
 gem "mocha", :group => :test
 
-if ENV['DB'] == "Redis"
-  gem "hiredis"
-  gem "redis", :require => ["redis/connection/hiredis", "redis"]
-elsif ENV["DB"] == "Mongo"
-  gem "mongoid", "~> 2.1"
-  gem "bson_ext", "~> 1.3"
-else
-
+case ENV['DB'].downcase
+  when "redis"
+    gem "hiredis"
+    gem "redis", :require => ["redis/connection/hiredis", "redis"]
+  when 'mongo'
+    gem "mongoid", "~> 2.1"
+    gem "bson_ext", "~> 1.3"
+  else
 end
