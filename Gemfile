@@ -27,10 +27,15 @@ gem 'sqlite3-ruby', :require => 'sqlite3'
 # end
 
 gem "nifty-generators", :git => 'http://github.com/ryanb/nifty-generators.git'
-
-# gem "mongoid", "~> 2.1"
-# gem "bson_ext", "~> 1.3"
 gem "bcrypt-ruby", :require => "bcrypt"
 gem "mocha", :group => :test
-gem "hiredis"
-gem "redis", :require => ["redis/connection/hiredis", "redis"]
+
+if ENV['DB'] == "Redis"
+  gem "hiredis"
+  gem "redis", :require => ["redis/connection/hiredis", "redis"]
+elsif ENV["DB"] == "Mongo"
+  gem "mongoid", "~> 2.1"
+  gem "bson_ext", "~> 1.3"
+else
+
+end
