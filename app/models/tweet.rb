@@ -7,9 +7,11 @@ class Tweet
 
   @@tweet_db = Redis.new
 
-  def self.all
+  def self.all params={}
     @@tweet_db.setnx "tweets:counter", 0
-    (0..@@tweet_db.get("tweets:counter").to_i).map do |id|
+    tweet_count = @@tweet_db.get("tweets:counter").to_i
+    limit = params[:limit] ? tweet_count - params[:limit] + 1 : 0
+    tweet_count.downto(limit).map do |id|
       Tweet.find id
     end
   end

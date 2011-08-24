@@ -50,8 +50,9 @@ class User
     @email ||= @@user_db.get("user:#{@id}:email")
   end
 
-  def tweets
-    @tweets ||= @@user_db.zrange("user:#{@id}:tweets", 0, -1).map do |tweet_id|
+  def tweets params={}
+    limit = params[:limit] ? -params[:limit] : 0
+    @tweets ||= @@user_db.zrevrange("user:#{@id}:tweets", limit, -1).map do |tweet_id|
       Tweet.find tweet_id
     end
   end

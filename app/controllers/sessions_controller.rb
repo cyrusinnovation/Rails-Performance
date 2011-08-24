@@ -1,6 +1,6 @@
 class SessionsController < ApplicationController
   def new
-    @listed_tweets = Tweet.all
+    @listed_tweets = Tweet.all({limit:20})
   end
 
   def create
@@ -10,7 +10,7 @@ class SessionsController < ApplicationController
       redirect_to_target_or_default root_url#, :notice => "Logged in successfully."
     else
       flash.now[:alert] = "Invalid login or password."
-       @listed_tweets = Tweet.all
+       @listed_tweets = Tweet.all({limit: 20})
       render :new
     end
   end
