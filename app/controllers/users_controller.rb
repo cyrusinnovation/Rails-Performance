@@ -1,7 +1,6 @@
 class UsersController < ApplicationController
   def new
     @user = User.new
-$stderr.puts @user.inspect
   end
   
   def create
