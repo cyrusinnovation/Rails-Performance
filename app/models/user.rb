@@ -1,1 +1,1 @@
-load "user.redis" if ENV["DB"] == "Redis"
+load "user.#{ENV["DB"].downcase}"

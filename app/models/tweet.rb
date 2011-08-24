@@ -1,1 +1,1 @@
-load "tweet.redis" if ENV['DB'] == "Redis"
+load "tweet.#{ENV["DB"].downcase}"

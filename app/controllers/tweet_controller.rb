@@ -2,7 +2,7 @@ class TweetController < ApplicationController
   def new
     if !cookies[:user_id].blank?
       @user = User.find(cookies[:user_id])
-      @listed_tweets = @user.tweets({limit:20})
+      @listed_tweets = @user.some_tweets(20)
     else
       redirect_to login_path
     end

@@ -108,6 +108,9 @@ class User
     password_hash == encrypt_password(pass)
   end
 
+  def some_tweets limit
+    tweets(limit: limit)
+  end
 
   def followers
     # FIXME

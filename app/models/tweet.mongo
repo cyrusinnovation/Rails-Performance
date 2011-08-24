@@ -1,0 +1,8 @@
+class Tweet
+
+  include Mongoid::Document
+  include Mongoid::Timestamps::Created
+
+  field :text
+  belongs_to :user
+end
