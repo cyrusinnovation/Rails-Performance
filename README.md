@@ -1,105 +1,45 @@
-# An Experimental Twitter Clone with Rails
+# Using Rails with Various NoSQL Data Stores
 
-Let's make an experimental Twitter clone web app by Ruby on Rails version 3.
+The goal of this project is to learn about new tools that facilitate scalability, enhance 
+application performance, and improve development speed. The focus, at least to start, 
+is on back-end data stores, and particularly NoSQL solutions.
 
-The minimum features of Twitter clone app are below:
+The approach is to take one or more demo applications, point them at various different 
+back ends, and run load tests against them. The NoSQL database is used as the data 
+store behind the model classes, which should look as much as possible like ActiveRecord
+classes to the outside world.
 
-* A visitor can sign up and get an account to become a user
-* A user can post tweets
-* A visitor and a user can see another user's one single tweet or a sequence of tweets
-* A visitor and a user can see public timeline
-* A user can follow another user
-* A user can see "timeline" of the followings' tweets
+We use JMeter for load testing and Rails as the application platform.
 
-I cut the following features for ease:
+## The demo application
 
-* A user can see "mentions"
-* A user can leave (unfollow) others
-* A user can send or receive direct messages
+The current demo app is a Twitter clone forked from ujihisa's twi1 at <https://github.com/ujihisa/twi1>. The original
+app stored tweets in javascript files and only used the database for storing users; the current app has been updated
+to store tweets in the database as well.
 
-But I also would want to add the following internal feature which the real Twitter seems to be using:
+The current demo app doesn't have the "follow" feature.
 
-* A timeline is not created just in time, but created when a user of the participants posted a tweet
+Starting the application requires indicating which database back-end to use in the "DB" environment
+variable. The current options are "Mongo" and "Redis" (case insensitive). E.g.:
 
-This feature reduces the load time of reading a timeline.
+    > DB=MONGO rails s
 
-## So what's the difference?
+The environment variable controls which gems will be selected in the Gemfile, and which
+model classes will be loaded.
 
-* It doesn't use any special software but just use Rails3
-* It doesn't use a relational DB for storing tweets
-* It is fast and scales (hopefully)
+## The models
 
-## The Product "twi1"
+Each model class contains a conditional that loads in a file whose extension is determined 
+by the database environment variable (i.e., user.mongo or user.redis).
 
-I named it "twi1" without thinking anything. That's here. <http://twi1.heroku.com/>
+The Mongo models use the Mongoid gem to mimic ActiveRecord models. The authlogic gem
+doesn't work with Mongo, so Nifty Generators was used to create authentication code.
 
-Note that currently it doesn't work because heroku doesn't support writing a file. I should look for another way if I use heroku.
+The Redis models involve a lot more one-off reimplementation of ActiveRecord methods.
+These assume a certain naming format for keys in Redis, and various tricks to make
+a key-value store look like a relational database.
 
-The below screenshots are on my local server.
+## The performance tests
 
-![User's timeline](http://gyazo.com/481d6caa9e0ce814d93acc76941eadc9.png)
-
-![Public timeline](http://gyazo.com/6b1ace898ac7dac063339f06785b488d.png)
-
-The public/user timeline is stored as the below.
-
-    timeline([
-    ,{user: 'ayden', text: 'test'}
-    ,{user: 'ayden', text: 'adsfjklasdf'}
-    ,{user: "ayden", text: "newest"}
-    ,{user: "brian", text: "asdfasdfasd"}
-    ,{user: "brian", text: "&lt;script&gt;test&lt;/script&gt;"}
-    ,{user: "jjjjjj", text: "asdfads"}
-    ,{user: "ujm", text: "Hello, world!"}
-    ]);
-
-When a user posted a tweet, the following code runs.
-
-    # in model/tweet
-
-    def add_a_tweet_on_timeline_to(username)
-      add_a_tweet_on_the_file("#{RAILS_ROOT}/public/#{username}.js")
-    end
-
-    def add_a_tweet_on_the_file(file)
-      File.open(file, 'r+') {|io|
-        finale = "]);\n"
-        io.seek(-finale.size, IO::SEEK_END)
-        io.puts %|,{user: "#{@owner.username}", text: "#{@text}"}|
-        io.write finale
-      }
-    end
-
-That just removed the last line and add two lines.
-
-To show the static timeline json file, I used the following short javascript codes.
-
-    function timeline(xs) {
-      var t = new Template("<p><b>#{user}</b>: #{text}</p>")
-      $('timeline').innerHTML =
-        xs.compact().map(function(x) {
-          return t.evaluate(x);
-        }).reverse().join("\n");
-    }
-
-and in the HTML view file,
-
-    <script type='text/javascript'>
-      Event.observe(window, 'load', function() {
-        var username = '<%= @user.username %>';
-        var url = '/' + username + '.js?' + (new Date()).valueOf();
-        var script = document.createElement('script');
-        script.setAttribute('src', url);
-        document.getElementsByTagName('head')[0].appendChild(script); 
-      });
-    </script>
-
-## Actually
-
-The current `twi1` doesn't have the "follow" feature.
-
-## References
-
-* <http://stackoverflow.com/questions/2453104/mongomapper-rails3-edge-undefined-method-to-key-on-form-for>
-* <http://stackoverflow.com/questions/2255176/getting-undefined-method-username-for-usersession-no-credentials-provided-w> (to run authlogin on heroku)
-* <http://www.ibm.com/developerworks/library/wa-aj-jsonp1/> (for jsonp)
+The JMeter test is included in the file "Twitter Clone Test Plan.jmx" in the JMeter
+directory. This can be opened and run directly from the JMeter GUI.
