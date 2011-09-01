@@ -30,6 +30,8 @@ gem "nifty-generators", :git => 'http://github.com/ryanb/nifty-generators.git'
 gem "bcrypt-ruby", :require => "bcrypt"
 gem "mocha", :group => :test
 
+ENV['DB'] ||= "redis"
+
 case ENV['DB'].downcase
   when "redis"
     gem "hiredis"

@@ -55,10 +55,6 @@ class User
     @username ||= @@user_db.get("user:#{@id}:username")
   end
 
-  def to_s
-    @id
-  end
-
   def email
     @email ||= @@user_db.get("user:#{@id}:email")
   end
