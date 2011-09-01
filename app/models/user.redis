@@ -33,21 +33,25 @@ class User
     end
   end
 
+  def delete
+    @@user_db.del "user:#{@@user_db.get("user:#{@id}:username")}"
+    @@user_db.del "user:#{@id}:username"
+    @@user_db.del "user:#{@@user_db.get("user:#{@id}:email")}"
+    @@user_db.del "user:#{@id}:email"
+    @@user_db.del "user:#{@id}:password_hash"
+    @@user_db.del "user:#{@id}:password_salt"
+    delete_tweets
+  end
+
   def self.delete_all
     (0..@@user_db.get("users:counter").to_i).map do |id|
-      @@user_db.del "user:#{@@user_db.get("user:#{@id}:username")}"
-      @@user_db.del "user:#{id}:username"
-      @@user_db.del "user:#{@@user_db.get("user:#{@id}:email")}"
-      @@user_db.del "user:#{id}:email"
-      @@user_db.del "user:#{id}:password_hash"
-      @@user_db.del "user:#{id}:password_salt"
-      @@user_db.del "user:#{id}:tweets"
+      User.find(id).delete
     end
     @@user_db.set "users:counter", 0
   end
 
   def delete_tweets
-    @@user_db.zremrangebyrank "user:#{@id}:tweets", 0, -1
+    @@user_db.del "user:#{id}:tweets"
     @tweets = []
   end
 
@@ -88,7 +92,7 @@ class User
   end
 
   def self.find id
-    User.new({id: id})
+    User.new({id: id.to_i})
   end
 
   def check_password
