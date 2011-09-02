@@ -1,7 +1,7 @@
 class Tweet
   include ActiveRedis
 
-  define_fields :text
+  field :text
   belongs_to :user
 
   #not generic
@@ -17,22 +17,6 @@ class Tweet
     end
 
     redis_db.set "#{table_name}:counter", 0
-  end
-
-  #move to define fields
-  def text
-    @text ||= redis_db.get("#{table_name}:#{@id}:text")
-  end
-
-  #move to belongs to
-  def user
-    @user ||= User.find(redis_db.get "#{table_name}:#{@id}:user_id")
-  end
-
-  #check that the tweet exists
-  #shouldn't always return a tweet
-  def self.find id
-    Tweet.new({id: id.to_i})
   end
 
 end

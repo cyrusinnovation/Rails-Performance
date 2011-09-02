@@ -16,7 +16,7 @@ module ActiveRedis
   #requires initialize to be unused
   def initialize params={}
     params.each do |key, value|
-      self.instance_variable_set ("@" + key.to_s).to_sym, value
+      self.instance_variable_set to_instance_variable_symbol(key), value
     end
   end
 
@@ -36,6 +36,9 @@ module ActiveRedis
     self.class.table_name
   end
 
+  def to_instance_variable_symbol symbol
+    ("@" + symbol.to_s).to_sym
+  end
   #0 can be an id if somebody calls all and saves the tweet that shouldn't have been returned
   #first tweet will have id 1 otherwise
   def save!
@@ -63,8 +66,8 @@ module ActiveRedis
     #Always returns tweet(s), even if they don't exist
     #always returns tweet with id 0
     def all params={}
-      redis_db.setnx "#{@@table_name}:counter", 0
-      count = redis_db.get("#{@@table_name}:counter").to_i
+      redis_db.setnx "#{table_name}:counter", 0
+      count = redis_db.get("#{table_name}:counter").to_i
       limit = params[:limit] ? count - params[:limit] + 1 : 0
       count.downto(limit).map do |id|
         find id
@@ -77,30 +80,42 @@ module ActiveRedis
       (redis_db.get "#{table_name}:counter").to_i
     end
 
+    def find id
+      raise ActiveRecord::RecordNotFound.new if redis_db.keys("#{table_name}:#{id}*").blank?
+      Tweet.new({id: id.to_i})
+    end
+
     def table_name
       @table_name ||= self.name.pluralize.downcase
-      
+
     end
 
     def redis_db
       @redis_db ||= Redis.new
     end
 
-
-    def define_fields *args
-      @redis_fields = args
-      args.each do |field|
-        attr_writer field
-      end
-    end
-
     def redis_fields
       @redis_fields
+    end
+
+    def field *args
+      @redis_fields = args
+      args.each do |field|
+        define_method field do
+          var = instance_variable_get(to_instance_variable_symbol(field))
+          var ||= redis_db.get("#{table_name}:#{@id}:#{field}")
+        end
+        attr_writer field
+      end
     end
 
     def belongs_to *args
       @redis_belongs = args
       args.each do |field|
+        define_method field do
+          var = instance_variable_get(to_instance_variable_symbol(field))
+          var ||= Object::const_get(field.to_s.capitalize).find(redis_db.get("#{table_name}:#{@id}:#{field}_id"))
+        end
         attr_writer field
       end
     end

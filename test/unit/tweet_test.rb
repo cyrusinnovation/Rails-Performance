@@ -30,6 +30,12 @@ class TweetTest < ActiveSupport::TestCase
       tweet.save!
     end
   end
+ 
+  test "nonexistent tweet cannot be found" do
+    assert_raise ActiveRecord::RecordNotFound do
+      Tweet.find(-1)
+    end
+  end
 
   def teardown
     @user.delete
