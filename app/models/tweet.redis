@@ -1,33 +1,7 @@
-require 'redis/connection/hiredis'
-require 'redis'
-
 class Tweet
-  extend ActiveModel::Naming
-  include ActiveModel::Conversion
+  include ActiveRedis
 
   @@table_name = ActiveModel::Naming.plural(self)
-
-  def self.define_fields *args
-    @redis_fields = args
-    args.each do |field|
-      attr_writer field
-    end
-  end
-
-  def self.redis_fields
-    @redis_fields
-  end
-
-  def self.belongs_to *args
-    @redis_belongs = args
-    args.each do |field|
-      attr_writer field
-    end
-  end
-
-  def self.redis_belongs
-    @redis_belongs
-  end
 
   define_fields :text
   belongs_to :user
@@ -93,7 +67,7 @@ class Tweet
 
     @id ||= @@tweet_db.incr("#{@@table_name}:counter")
 
-    self.class.redis_fields.each do |field|
+    redis_fields.each do |field|
       @@tweet_db.set "#{@@table_name}:#{id}:#{field}", self.send(field)
     end
 
