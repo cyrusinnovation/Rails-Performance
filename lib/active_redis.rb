@@ -61,6 +61,13 @@ module ActiveRedis
     end
   end
 
+  #Not fully implemented - need to delete e.g., tweet off user. and reverse associations (see User)
+#  def delete
+#    redis_db.keys("#{table_name}:#{id}:*").each do |key|
+#      redis_db.del key
+#    end
+#  end
+
   module ClassMethods
 
     #always reverse sorts
@@ -86,14 +93,8 @@ module ActiveRedis
 
 
     def delete_all
-      (0..redis_db.get("#{table_name}:counter").to_i).map do |id|
-        redis_fields.each do |field|
-          redis_db.del "#{table_name}:#{id}:#{field}"
-        end
-
-        redis_belongs.each do |belong|
-          redis_db.del "#{table_name}:#{id}:#{belong}_id"
-        end
+      redis_db.keys("#{table_name}:*").each do |key|
+        redis_db.del key
       end
 
       redis_belongs.each do |belong|
