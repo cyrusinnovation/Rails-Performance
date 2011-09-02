@@ -1,81 +1,32 @@
 class Tweet
   include ActiveRedis
 
-  @@table_name = ActiveModel::Naming.plural(self)
-
   define_fields :text
   belongs_to :user
-  attr_reader :id
-
-  @@tweet_db = Redis.new
-
-  #always reverse sorts
-  #Always returns tweet(s), even if they don't exist
-  #always returns tweet with id 0
-  def self.all params={}
-    @@tweet_db.setnx "#{@@table_name}:counter", 0
-    count = @@tweet_db.get("#{@@table_name}:counter").to_i
-    limit = params[:limit] ? count - params[:limit] + 1 : 0
-    count.downto(limit).map do |id|
-      find id
-    end
-  end
 
   #not generic
   def self.delete_all
-    (0..@@tweet_db.get("#{@@table_name}:counter").to_i).map do |id|
-      @@tweet_db.del "#{@@table_name}:#{id}:text"
-      @@tweet_db.del "#{@@table_name}:#{id}:id"
-      @@tweet_db.del "#{@@table_name}:#{id}:user_id"
+    (0..redis_db.get("#{table_name}:counter").to_i).map do |id|
+      redis_db.del "#{table_name}:#{id}:text"
+      redis_db.del "#{table_name}:#{id}:id"
+      redis_db.del "#{table_name}:#{id}:user_id"
     end
 
-    User.all.each do |user|
+    user.all.each do |user|
       user.delete_tweets
     end
 
-    @@tweet_db.set "#{@@table_name}:counter", 0
-  end
-
-  #over write properties?
-  #passing in an id can break things
-  #requires initialize to be unused
-  def initialize params={}
-    params.each do |key, value|
-      self.instance_variable_set ("@" + key.to_s).to_sym, value
-    end
-  end
-
-  #fine
-  def self.count
-    (@@tweet_db.get "#{@@table_name}:counter").to_i
+    redis_db.set "#{table_name}:counter", 0
   end
 
   #move to define fields
   def text
-    @text ||= @@tweet_db.get("#{@@table_name}:#{@id}:text")
+    @text ||= redis_db.get("#{table_name}:#{@id}:text")
   end
 
   #move to belongs to
   def user
-    @user ||= User.find(@@tweet_db.get "#{@@table_name}:#{@id}:user_id")
-  end
-
-  #god help us with IDs!
-  #0 can be an id if somebody calls all and saves the tweet that shouldn't have been returned
-  #first tweet will have id 1 otherwise
-  def save!
-
-    @id ||= @@tweet_db.incr("#{@@table_name}:counter")
-
-    redis_fields.each do |field|
-      @@tweet_db.set "#{@@table_name}:#{id}:#{field}", self.send(field)
-    end
-
-    @@tweet_db.set "#{@@table_name}:#{id}:user_id", user.id unless user.nil?
-    if user
-      user.tweets << self
-      user.save!
-    end
+    @user ||= User.find(redis_db.get "#{table_name}:#{@id}:user_id")
   end
 
   #check that the tweet exists
