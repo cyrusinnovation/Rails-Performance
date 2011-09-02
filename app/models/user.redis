@@ -50,6 +50,8 @@ class User
     @@user_db.set "users:counter", 0
   end
 
+  #TODO this isn't the active record way to clear an association
+  #TODO also, fix the active_redis delete_all to use the corrected method
   def delete_tweets
     @@user_db.del "user:#{id}:tweets"
     @tweets = []
@@ -66,6 +68,8 @@ class User
   def tweets params={}
     limit = params[:limit] || -1
     @tweets ||= @@user_db.zrevrange("user:#{@id}:tweets", 0, limit).map do |tweet_id|
+      puts "USERID #{@id}"
+      puts "TWEET ID #{tweet_id}"
       Tweet.find tweet_id
     end
   end

@@ -39,6 +39,7 @@ module ActiveRedis
   def to_instance_variable_symbol symbol
     ("@" + symbol.to_s).to_sym
   end
+
   #0 can be an id if somebody calls all and saves the tweet that shouldn't have been returned
   #first tweet will have id 1 otherwise
   def save!
@@ -74,15 +75,34 @@ module ActiveRedis
       end
     end
 
-
-    #fine
     def count
       (redis_db.get "#{table_name}:counter").to_i
     end
 
     def find id
-      raise ActiveRecord::RecordNotFound.new if redis_db.keys("#{table_name}:#{id}*").blank?
-      Tweet.new({id: id.to_i})
+      raise ActiveRecord::RecordNotFound if redis_db.keys("#{table_name}:#{id}*").blank?
+      new({id: id.to_i})
+    end
+
+
+    def delete_all
+      (0..redis_db.get("#{table_name}:counter").to_i).map do |id|
+        redis_fields.each do |field|
+          redis_db.del "#{table_name}:#{id}:#{field}"
+        end
+
+        redis_belongs.each do |belong|
+          redis_db.del "#{table_name}:#{id}:#{belong}_id"
+        end
+      end
+
+      redis_belongs.each do |belong|
+        Object::const_get(belong.to_s.capitalize).all.each do |instance|
+          instance.send "delete_#{self.name.pluralize.downcase}".to_sym
+        end
+      end
+
+      redis_db.set "#{table_name}:counter", 0
     end
 
     def table_name

@@ -37,6 +37,11 @@ class TweetTest < ActiveSupport::TestCase
     end
   end
 
+  test "all tweets can be deleted" do
+    Tweet.delete_all
+    assert_equal 0, Tweet.count
+  end
+
   def teardown
     @user.delete
   end

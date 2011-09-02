@@ -3,20 +3,4 @@ class Tweet
 
   field :text
   belongs_to :user
-
-  #not generic
-  def self.delete_all
-    (0..redis_db.get("#{table_name}:counter").to_i).map do |id|
-      redis_db.del "#{table_name}:#{id}:text"
-      redis_db.del "#{table_name}:#{id}:id"
-      redis_db.del "#{table_name}:#{id}:user_id"
-    end
-
-    user.all.each do |user|
-      user.delete_tweets
-    end
-
-    redis_db.set "#{table_name}:counter", 0
-  end
-
 end
